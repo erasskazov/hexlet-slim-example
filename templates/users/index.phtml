@@ -1,3 +1,6 @@
+<a href="/users/new">Новый пользователь</a>
+<br>
+<br>
 <form action="/users" method="get">
     <input type="search" name="term" value="<?= htmlspecialchars($term)?>" />
     <input type="submit" value="Поиск"/>
@@ -6,6 +9,6 @@
 <br>
 <ul>
     <?php foreach ($users as $user) : ?>
-        <li> <?= $user; ?> </li>
+        <li> <?= $user['nickname']; ?> </li>
     <?php endforeach; ?>
 </ul>
