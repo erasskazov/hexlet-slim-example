@@ -1,6 +1,16 @@
+<h1>Users</h1>
+<br>
 <a href="/users/new">Новый пользователь</a>
 <br>
 <br>
+<?php foreach ($flash as $key => $messages): ?>
+    <div>
+        <?php foreach ($messages as $message) : ?>
+            <?= $message ?>
+        <?php endforeach ?>
+    </div>
+<?php endforeach ?>
+<hr>
 <form action="/users" method="get">
     <input type="search" name="term" value="<?= htmlspecialchars($term)?>" />
     <input type="submit" value="Поиск"/>
@@ -9,6 +19,6 @@
 <br>
 <ul>
     <?php foreach ($users as $user) : ?>
-        <li> <?= $user['nickname']; ?> </li>
+        <li><a href="<?= $urls['users'] . '/' . $user['id'] ?>"><?= $user['nickname'] ?></a></li>
     <?php endforeach; ?>
 </ul>

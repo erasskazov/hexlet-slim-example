@@ -3,6 +3,10 @@
     "type": "project",
     "license": "MIT",
     "autoload": {
+        "files": [
+            "src/Users.php",
+            "src/Validator.php"
+        ],
         "psr-4": {
             "Yo\\HexletSlimExample\\": "src/"
         }
@@ -18,6 +22,7 @@
         "slim/psr7": "^1.5",
         "slim/http": "^1.2",
         "slim/php-view": "^3.2",
-        "php-di/php-di": "^6.4"
+        "php-di/php-di": "^6.4",
+        "slim/flash": "^0.4.0"
     }
 }

@@ -1,4 +1,8 @@
-<a href="users/new">Новый пользователь</a>
+<a href="<?= $urls['newUser'] ?>">Новый пользователь</a>
 <br>
-id = <?= $id ?><br>
-nickname = <?= $nickname ?>
+<a href="<?= $urls['allUsers'] ?>">Все пользователи</a>
+<br>
+<?php foreach ($user as $key => $value) : ?>
+    <?= $key ?>: <?= $value ?>
+    <br>
+<?php endforeach ?>
