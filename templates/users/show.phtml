@@ -2,7 +2,11 @@
 <br>
 <a href="<?= $urls['allUsers'] ?>">Все пользователи</a>
 <br>
+<br>
 <?php foreach ($user as $key => $value) : ?>
     <?= $key ?>: <?= $value ?>
     <br>
 <?php endforeach ?>
+<br>
+<br>
+<a href="<?= $urls['allUsers'] . '/' . $user['id'] . '/edit' ?>">Обновить данные пользователя</a>

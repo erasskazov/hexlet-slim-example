@@ -1,8 +1,5 @@
 <?php
 
-namespace Validator;
-
-
 class Validator
 {
     public function validate($user)

@@ -5,12 +5,13 @@ require __DIR__ . '/../vendor/autoload.php';
 
 use Slim\Factory\AppFactory;
 use DI\Container;
-use Validator\Validator;
+use Slim\Middleware\MethodOverrideMiddleware;
+
 use function Users\addUser;
 use function Users\getUser;
 use function Users\loadUsers;
-
-const USERS_PATH = 'users/users.json';
+use function Users\updateUser;
+use function Users\userExists;
 
 session_start();
 
@@ -22,11 +23,15 @@ $container->set('flash', function () {
     return new \Slim\Flash\Messages();
 });
 
+
 $app = AppFactory::createFromContainer($container);
+$app->add(MethodOverrideMiddleware::class);
+$app->addErrorMiddleware(true, true, true);
+
 $router = $app->getRouteCollector()->getRouteParser();
 
 $app->get('/users', function ($request, $response) use ($router) {
-    $users = loadUsers(USERS_PATH)['users'];
+    $users = loadUsers();
     $term = $request->getQueryParam('term');
     $filteredUsers = array_filter($users, fn ($user) => str_contains($user['nickname'], $term));
     $messages = $this->get('flash')->getMessages();
@@ -41,11 +46,11 @@ $app->get('/users', function ($request, $response) use ($router) {
 
 
 $app->post('/users', function ($request, $response) use ($router) {
-    $validator = new Validator();
+    $validator = new \Validator();
     $user = $request->getParsedBodyParam('user');
     $errors = $validator->validate($user);
     if (count($errors) === 0) {
-        addUser($user, USERS_PATH);
+        addUser($user);
         $this->get('flash')->addMessage('success', 'Пользователь был успешно добавлен');
         return $response->withRedirect($router->urlFor('users'), 302);
     }
@@ -55,7 +60,7 @@ $app->post('/users', function ($request, $response) use ($router) {
         'urls' => ['newUser' => $router->urlFor('newUser'), 'allUsers' => $router->urlFor('users')],
         'errors' => $errors
     ];
-    return $this->get('renderer')->render($response, 'users/new.phtml', $params);
+    return $this->get('renderer')->render($response->withStatus(422), 'users/new.phtml', $params);
 });
 
 $app->get('/users/new', function ($request, $response) use ($router) {
@@ -69,9 +74,9 @@ $app->get('/users/new', function ($request, $response) use ($router) {
 
 
 $app->get('/users/{id}', function ($request, $response, array $args) use ($router) {
-    $user = getUser($args['id'], USERS_PATH);
+    $user = getUser($args['id']);
     if ($user === null) {
-        return $response->withStatus(404)->withRedirect($router->urlFor('users'));
+        return $response->withStatus(404)->write('Page Not Found');
     }
     $params = [
         'user' => $user,
@@ -81,16 +86,48 @@ $app->get('/users/{id}', function ($request, $response, array $args) use ($route
 })->setName('users');
 
 
-$app->get('/foo', function ($request, $response) {
-    $this->get('flash')->addMessage('success', 'This is message');
-    return $response->withRedirect('/bar');
-});
+$app->get('/users/{id}/edit', function ($request, $response, $args) use ($router) {
+    $id = $args['id'];
+    $user = getUser($id);
+    var_dump($user);
+    if ($user === null) {
+        return $response->withStatus(404)->write("User doesn't exists");
+    }
+    $params = [
+        'user' => $user,
+        'errors' => [],
+        'urls' => ['allUsers' => $router->urlFor('users'), 'newUser' => $router->urlFor('newUser')]
+    ];
+    return $this->get('renderer')->render($response, 'users/edit.phtml', $params);
+})->setName('editUser');
 
-$app->get('/bar', function ($request, $response) {
-    $messages = $this->get('flash')->getMessages();
-    print_r($messages);
-    $params = ['flash' => $messages];
-    return $this->get('renderer')->render($response, 'bar.phtml', $params);
+
+$app->patch('/users/{id}', function ($request, $response, $args) use ($router) {
+    $id = $args['id'];
+
+    if (!userExists($id)) {
+        return $response->withStatus(404)->write('ERROR');
+    }
+
+    $userData = $request->getParsedBodyParam('user');
+    $userData['id'] = $id;
+    $validator = new \Validator();
+    $errors = $validator->validate($userData);
+
+    if (count($errors) === 0) {
+        updateUser($id, $userData);
+        $this->get('flash')->addMessage('success', 'User has been update');
+        // $url = $router->urlFor('editUser', ['id' => $id]);
+        return $response->withRedirect($router->urlFor('users'));
+    }
+    
+    $params = [
+        'user' => $userData,
+        'errors' => $errors,
+        'urls' => ['allUsers' => $router->urlFor('users'), 'newUser' => $router->urlFor('newUser')]
+    ];
+
+    return $this->get('renderer')->render($response, 'users/edit.phtml', $params);
 });
 
 $app->run();
